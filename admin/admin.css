@@ -1,0 +1,87 @@
+.admin-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 8px;
+}
+
+.admin-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.admin-row label.admin-wide {
+  flex: 1;
+  min-width: 260px;
+}
+
+.admin-row input,
+.admin-row select {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.admin-row input[type="color"] {
+  padding: 2px;
+  width: 48px;
+  height: 30px;
+}
+
+.admin-muted {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.admin-game-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.admin-game-row:last-child {
+  border-bottom: none;
+}
+
+.admin-game-icon {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+}
+
+.admin-game-name {
+  font-weight: 600;
+  flex: 1;
+  min-width: 160px;
+}
+
+.admin-note-inline {
+  max-width: 280px;
+}
+
+.admin-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}

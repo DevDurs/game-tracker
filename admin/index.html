@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — Esports Match Dashboard</title>
+  <link rel="stylesheet" href="../style.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <header>
+    <h1>⚙️ Admin</h1>
+    <div class="header-right">
+      <a class="tab" href="/">← Back to dashboard</a>
+    </div>
+  </header>
+
+  <main>
+    <div id="admin-note" class="note hidden"></div>
+
+    <section>
+      <h2>Refresh Interval</h2>
+      <div class="admin-card">
+        <div class="admin-row">
+          <label>
+            Seconds between refreshes
+            <input id="refresh-input" type="number" min="5" step="5" />
+          </label>
+          <button id="refresh-save" class="tab" type="button">Save</button>
+        </div>
+        <div class="admin-muted">Applies immediately — no restart needed.</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Games</h2>
+      <div id="games-list" class="admin-card"></div>
+    </section>
+
+    <section>
+      <h2>Add a Game</h2>
+      <div class="admin-card">
+        <form id="add-game-form">
+          <div class="admin-row">
+            <label>ID <input name="id" required placeholder="lol" pattern="[a-z0-9-]+" /></label>
+            <label>Name <input name="name" required placeholder="League of Legends" /></label>
+          </div>
+          <div class="admin-row">
+            <label>Icon <input name="icon" placeholder="🐉" /></label>
+            <label>Color <input name="color" type="color" value="#888888" /></label>
+          </div>
+          <div class="admin-row">
+            <label>
+              Provider
+              <select name="provider">
+                <option value="pandascore">pandascore</option>
+                <option value="mock">mock (placeholder)</option>
+              </select>
+            </label>
+            <label>Slug <input name="slug" required placeholder="lol" /></label>
+          </div>
+          <div class="admin-row">
+            <label class="admin-wide">Note (optional) <input name="note" placeholder="Shown as a banner under this game's tab" /></label>
+          </div>
+          <button type="submit" class="tab">Add Game</button>
+        </form>
+      </div>
+      <div class="admin-muted">
+        Provider must be one of the ones already implemented in
+        <code>server/providers/</code> (currently <code>pandascore</code> or
+        <code>mock</code>). For PandaScore, slug is that game's PandaScore
+        API slug (e.g. <code>csgo</code>, <code>lol</code>,
+        <code>valorant</code>).
+      </div>
+    </section>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>

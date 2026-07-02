@@ -1,6 +1,6 @@
 services:
   dashboard:
-    build: .
+    image: ghcr.io/devdurs/game-tracker:latest
     ports:
       - "9012:9012"
     environment:

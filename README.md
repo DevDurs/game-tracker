@@ -18,6 +18,9 @@ Extra features:
   broadcaster used). There's no watch button for launching Dota 2's own
   in-client spectator — Valve doesn't expose a documented way to deep-link
   into spectating a specific pro match from outside the client.
+- **Admin panel** (`/admin`) — change the refresh interval, enable/disable
+  games, and add new ones, all without editing files or restarting. See
+  [Admin panel](#admin-panel) below.
 
 ## Quick start (Docker)
 
@@ -42,6 +45,10 @@ container side together, and keep `PORT` in `environment:` equal to
 whatever you put on the right of the colon in `ports:` — those two must
 always match, or the container will listen on a port Docker isn't
 forwarding to.
+
+Before your first run, also set `ADMIN_USERNAME` and `ADMIN_PASSWORD` in
+`.env` — the admin panel refuses to work without both set. See
+[Admin panel](#admin-panel).
 
 ### No API key yet? Try demo mode
 
@@ -80,6 +87,35 @@ Once you've pushed to GitHub and the workflow has run at least once (check
 the **Actions** tab), pull and run the published image directly on your
 server:
 
+The recommended way is `docker-compose.prod.yml` (included in this repo) —
+it pulls the published image instead of building it, so redeploys are one
+command:
+
+```bash
+# one-time setup on the server
+mkdir game-tracker && cd game-tracker
+# copy docker-compose.prod.yml and .env.example from this repo onto the server
+cp .env.example .env   # fill in PANDASCORE_API_KEY, ADMIN_USERNAME, ADMIN_PASSWORD, etc.
+
+docker compose -f docker-compose.prod.yml up -d
+```
+
+To redeploy after pushing new commits (once the Actions workflow has
+finished publishing):
+
+```bash
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+```
+
+That second command recreates the container only if the image actually
+changed, so it's safe to run any time. The `./data` volume it mounts is
+where admin panel changes (refresh interval, enabled/disabled games,
+added games) persist — without it, every redeploy resets to whatever's in
+`server/games.json` baked into the image.
+
+If you'd rather not use Compose, the equivalent plain `docker run`:
+
 ```bash
 docker pull ghcr.io/devdurs/game-tracker:latest
 
@@ -87,10 +123,13 @@ docker run -d \
   --name game-tracker \
   --restart unless-stopped \
   -p 9012:9012 \
+  -v $(pwd)/data:/app/server/data \
   -e PANDASCORE_API_KEY=your_key_here \
   -e REFRESH_INTERVAL_SECONDS=30 \
   -e DEMO_MODE=false \
   -e PORT=9012 \
+  -e ADMIN_USERNAME=your_admin_username \
+  -e ADMIN_PASSWORD=your_admin_password \
   ghcr.io/devdurs/game-tracker:latest
 ```
 
@@ -110,6 +149,40 @@ followed by `docker stop game-tracker && docker rm game-tracker` and the
 on the server that references `image: ghcr.io/devdurs/game-tracker:latest`
 instead of `build: .`).
 
+## Admin panel
+
+Visit `/admin` (e.g. `http://localhost:9012/admin`) and log in with
+`ADMIN_USERNAME` / `ADMIN_PASSWORD` from `.env` — the browser will prompt
+for these via standard HTTP Basic Auth. From there you can:
+
+- Change the refresh interval (applies immediately, no restart)
+- Enable or disable any game (disabled games disappear from the public
+  dashboard and stop being polled, saving PandaScore API quota)
+- Add a new game, choosing an existing provider (`pandascore` or `mock`)
+  and, for PandaScore, that game's PandaScore slug (e.g. `lol`, `valorant`,
+  `overwatch`)
+
+**No database is used or needed.** Admin changes are written to a small
+JSON file at `server/data/runtime-config.json`. `server/games.json` stays
+untouched as the built-in seed list (it's what bootstraps
+`runtime-config.json` the very first time the app runs); after that, the
+runtime file is the live source of truth. This is why the Docker setup
+mounts `server/data` as a volume — without persisting that one file,
+admin changes would be lost every time the container is rebuilt or
+redeployed.
+
+Adding a game through the admin panel only works for providers that
+already exist as code in `server/providers/` — it's choosing between
+`pandascore` (any game PandaScore supports) and `mock` (a placeholder,
+same as Deadlock uses). Wiring up a genuinely new data source (like a
+future real Deadlock API) still means writing a new file in
+`server/providers/`, same as before — the admin panel doesn't write code,
+just configuration.
+
+Basic Auth sends credentials on every request, so this is only meant to
+be used over HTTPS — fine given it's proxied through Cloudflare Tunnel,
+but don't expose `/admin` directly over plain HTTP on the open internet.
+
 ## Running without Docker
 
 ```bash
@@ -120,7 +193,14 @@ npm start
 
 ## Adding another game (e.g. Deadlock)
 
-Games are defined in `server/games.json`:
+The easiest way is the [admin panel](#admin-panel) — no file editing or
+restart needed for games using an existing provider. What follows is what
+that form does under the hood, useful if you're editing the seed file
+directly or writing a new provider.
+
+Games are defined in `server/games.json` (the seed list — see
+[Admin panel](#admin-panel) for how the *running* list actually gets
+edited):
 
 ```json
 {
@@ -158,6 +238,8 @@ All via environment variables / `.env`:
 | `REFRESH_INTERVAL_SECONDS` | `30` | How often the server polls PandaScore and the frontend polls the server |
 | `DEMO_MODE` | `false` | Force all games to use sample data |
 | `PORT` | `9012` | Server port (must match the container-side number in `docker-compose.yml`'s `ports:` line) |
+| `ADMIN_USERNAME` | — | Required to use `/admin` |
+| `ADMIN_PASSWORD` | — | Required to use `/admin` |
 
 ## How auto-refresh works
 
@@ -172,13 +254,20 @@ falls back to demo data and shows a banner rather than going blank.
 
 ```
 server/
-  index.js            express app, in-memory cache, refresh loop
-  games.json           list of games shown in the dashboard
+  index.js             express app, in-memory cache, refresh loop, admin routes
+  config-store.js       loads/saves the runtime config (no database)
+  admin-auth.js          HTTP Basic Auth middleware for /admin
+  games.json              seed list of games (bootstraps runtime config on first run)
+  data/                    runtime-config.json lives here — gitignored, mounted as a volume
   providers/
-    pandascore.js       real data source (Dota 2, and other PandaScore games)
+    pandascore.js       real data source (Dota 2, CS2, and other PandaScore games)
     mock.js              demo/placeholder data source
 public/
-  index.html, app.js, style.css   frontend (no build step, vanilla JS)
+  index.html, app.js, style.css   main dashboard (no build step, vanilla JS)
+admin/
+  index.html, admin.js, admin.css   admin panel — only reachable via the
+                                     authenticated /admin route, not part
+                                     of the public static folder
 Dockerfile
 docker-compose.yml
 ```

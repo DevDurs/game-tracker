@@ -264,3 +264,10 @@ footer {
   color: var(--muted);
   padding: 20px;
 }
+
+footer a {
+  color: var(--muted);
+}
+footer a:hover {
+  color: var(--text);
+}

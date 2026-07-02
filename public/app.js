@@ -44,8 +44,8 @@ function toggleFavoritesOnly() {
   renderRecent(lastRecent);
 }
 
-// --- Spoiler-free mode (persisted locally) ---
-let spoilerMode = localStorage.getItem('spoilerMode') === 'true';
+// --- Spoiler-free mode (persisted locally, defaults ON) ---
+let spoilerMode = localStorage.getItem('spoilerMode') !== 'false';
 
 function applySpoilerButtonState() {
   var btn = document.getElementById('spoiler-toggle');
