@@ -1,0 +1,31 @@
+[
+  {
+    "id": "dota2",
+    "name": "Dota 2",
+    "provider": "pandascore",
+    "slug": "dota2",
+    "icon": "🛡️",
+    "color": "#c0392b",
+    "enabled": true
+  },
+  {
+    "id": "deadlock",
+    "name": "Deadlock",
+    "provider": "mock",
+    "slug": "deadlock",
+    "icon": "🕸️",
+    "color": "#8e44ad",
+    "enabled": true,
+    "note": "No public esports schedule API exists for Deadlock yet. Showing sample placeholder data until one is wired up (see providers/mock.js)."
+  },
+  {
+    "id": "cs2",
+    "name": "Counter-Strike 2",
+    "provider": "pandascore",
+    "slug": "csgo",
+    "icon": "🔫",
+    "color": "#f39c12",
+    "enabled": true,
+    "note": "PandaScore still uses the \"csgo\" endpoint slug for CS2 data (legacy naming from their CS2 migration)."
+  }
+]

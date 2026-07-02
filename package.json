@@ -1,0 +1,19 @@
+{
+  "name": "esports-match-dashboard",
+  "version": "1.0.0",
+  "description": "Live/upcoming match dashboard for Dota 2 and other games, with countdown timers and auto-refresh.",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "node-fetch": "^2.7.0",
+    "dotenv": "^16.4.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

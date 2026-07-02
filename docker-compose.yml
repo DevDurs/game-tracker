@@ -1,0 +1,11 @@
+services:
+  dashboard:
+    build: .
+    ports:
+      - "9000:8080"
+    environment:
+      - PANDASCORE_API_KEY=${PANDASCORE_API_KEY}
+      - REFRESH_INTERVAL_SECONDS=${REFRESH_INTERVAL_SECONDS:-30}
+      - DEMO_MODE=${DEMO_MODE:-false}
+      - PORT=8080
+    restart: unless-stopped

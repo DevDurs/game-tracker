@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Esports Match Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1><span id="active-icon">🛡️</span> Esports Match Dashboard</h1>
+    <div class="header-right">
+      <nav id="game-tabs"></nav>
+      <button id="spoiler-toggle" class="tab spoiler-toggle" title="Hide live scores/results until clicked">🙈 Spoiler-free</button>
+      <div class="status">
+        <span id="status-dot" class="dot"></span>
+        <span id="status-text">loading…</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="note" class="note hidden"></div>
+
+    <section>
+      <h2>Live Now</h2>
+      <div id="live-matches" class="matches"></div>
+    </section>
+
+    <section>
+      <h2>Upcoming</h2>
+      <div id="upcoming-matches" class="matches"></div>
+    </section>
+  </main>
+
+  <footer>
+    Auto-refreshes every <span id="refresh-interval">30</span>s · Last updated <span id="last-updated">—</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
