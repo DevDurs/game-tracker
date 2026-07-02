@@ -41,12 +41,14 @@ header h1 {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 #game-tabs {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .tab {
@@ -270,4 +272,54 @@ footer a {
 }
 footer a:hover {
   color: var(--text);
+}
+
+@media (max-width: 640px) {
+  header {
+    padding: 12px 14px;
+  }
+
+  header h1 {
+    font-size: 16px;
+    width: 100%;
+  }
+
+  .header-right {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  #game-tabs {
+    gap: 4px;
+  }
+
+  .tab {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .status {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  main {
+    padding: 14px;
+  }
+
+  .match-card {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .match-teams {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .match-right {
+    width: 100%;
+    justify-content: space-between;
+  }
 }

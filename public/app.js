@@ -304,7 +304,8 @@ function fetchMatches() {
 
       renderLive(data.live || []);
       renderUpcoming(data.upcoming || []);
-      renderRecent(data.recent || []);
+      el('recent-section').classList.toggle('hidden', !data.recentResultsEnabled);
+      if (data.recentResultsEnabled) renderRecent(data.recent || []);
 
       el('last-updated').textContent = data.updatedAt
         ? new Date(data.updatedAt).toLocaleTimeString()

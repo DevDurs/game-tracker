@@ -49,7 +49,7 @@ async function fetchMatches(status, slug, apiKey, sort) {
 
 const RECENT_WINDOW_MS = 24 * 60 * 60 * 1000; // last 24 hours
 
-async function getMatches({ slug }) {
+async function getMatches({ slug, includeRecent }) {
   const apiKey = process.env.PANDASCORE_API_KEY;
   if (!apiKey) {
     throw new Error(
@@ -57,16 +57,25 @@ async function getMatches({ slug }) {
     );
   }
 
-  const [running, upcoming, past] = await Promise.all([
-    fetchMatches('running', slug, apiKey),
-    fetchMatches('upcoming', slug, apiKey),
+  const fetches = [fetchMatches('running', slug, apiKey), fetchMatches('upcoming', slug, apiKey)];
+
+  // Skip the 'past' request entirely when the feature is off — no point
+  // spending a request per refresh on data most free-tier accounts can't
+  // fully see anyway (post-match results are behind PandaScore's paid
+  // Historical Data plan, priced per videogame).
+  if (includeRecent) {
     // 'past' would otherwise sort oldest-first by begin_at; flip it so we
     // get the most recently finished matches, not the oldest ones.
-    fetchMatches('past', slug, apiKey, '-begin_at'),
-  ]);
+    fetches.push(fetchMatches('past', slug, apiKey, '-begin_at'));
+  }
 
-  const cutoff = Date.now() - RECENT_WINDOW_MS;
-  const recent = past.filter((m) => m.beginAt && new Date(m.beginAt).getTime() >= cutoff);
+  const [running, upcoming, past] = await Promise.all(fetches);
+
+  let recent = [];
+  if (includeRecent && past) {
+    const cutoff = Date.now() - RECENT_WINDOW_MS;
+    recent = past.filter((m) => m.beginAt && new Date(m.beginAt).getTime() >= cutoff);
+  }
 
   return { live: running, upcoming, recent };
 }

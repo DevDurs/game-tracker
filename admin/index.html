@@ -33,6 +33,28 @@
     </section>
 
     <section>
+      <h2>Recent Results</h2>
+      <div class="admin-card">
+        <label class="admin-toggle">
+          <input id="recent-results-input" type="checkbox" />
+          Show "Recent Results" on the dashboard
+        </label>
+        <div class="admin-muted">
+          Off by default. PandaScore's free tier doesn't include past-match
+          results — that's the paid "Historical Data" plan, priced per
+          videogame (from roughly £400/month, per their pricing page). With
+          this off, the dashboard skips that request entirely rather than
+          spending a call every refresh on data that mostly comes back
+          empty. Turning it on will still show <em>something</em> for
+          high-match-volume titles (matches that drop off "Live" are held
+          onto locally for a while even without the paid plan), but for
+          lower-volume titles expect it to mostly stay empty unless you've
+          actually upgraded that game's PandaScore plan.
+        </div>
+      </div>
+    </section>
+
+    <section>
       <h2>Games</h2>
       <div id="games-list" class="admin-card"></div>
     </section>

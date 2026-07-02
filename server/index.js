@@ -13,6 +13,10 @@ const PORT = Number(process.env.PORT || 9012);
 // config-store.js). Seeded from server/games.json + REFRESH_INTERVAL_SECONDS
 // on first run.
 let config = loadConfig();
+// Normalize configs saved before recentResultsEnabled existed.
+if (typeof config.recentResultsEnabled !== 'boolean') {
+  config.recentResultsEnabled = false;
+}
 saveConfig(config); // make sure the file exists from the very first run
 
 function getGame(id) {
@@ -71,13 +75,14 @@ function reconcileRecent(gameId, previousLive, live, recent) {
 async function refreshGame(game) {
   const providerName = DEMO_MODE ? 'mock' : game.provider;
   const previousLive = (cache[game.id] && cache[game.id].live) || [];
+  const includeRecent = config.recentResultsEnabled;
   try {
     const provider = getProvider(providerName);
-    const { live, upcoming, recent } = await provider.getMatches({ slug: game.slug });
+    const { live, upcoming, recent } = await provider.getMatches({ slug: game.slug, includeRecent });
     cache[game.id] = {
       live,
       upcoming,
-      recent: reconcileRecent(game.id, previousLive, live, recent || []),
+      recent: includeRecent ? reconcileRecent(game.id, previousLive, live, recent || []) : [],
       updatedAt: new Date().toISOString(),
       error: null,
       demo: DEMO_MODE || providerName === 'mock',
@@ -86,7 +91,7 @@ async function refreshGame(game) {
     console.error(`[${game.id}] refresh failed:`, err.message);
     try {
       const mock = getProvider('mock');
-      const { live, upcoming, recent } = await mock.getMatches({ slug: game.slug });
+      const { live, upcoming, recent } = await mock.getMatches({ slug: game.slug, includeRecent });
       cache[game.id] = {
         live,
         upcoming,
@@ -131,7 +136,19 @@ app.use(express.json());
 app.use('/admin', requireAdminAuth, express.static(path.join(__dirname, '..', 'admin')));
 
 app.get('/api/admin/config', requireAdminAuth, (req, res) => {
-  res.json({ refreshIntervalSeconds: config.refreshIntervalSeconds, games: config.games });
+  res.json({
+    refreshIntervalSeconds: config.refreshIntervalSeconds,
+    recentResultsEnabled: config.recentResultsEnabled,
+    games: config.games,
+  });
+});
+
+app.put('/api/admin/recent-results', requireAdminAuth, (req, res) => {
+  const enabled = Boolean(req.body && req.body.enabled);
+  config.recentResultsEnabled = enabled;
+  saveConfig(config);
+  refreshAll(); // fire and forget — reflects the change without waiting for the next cycle
+  res.json({ ok: true, recentResultsEnabled: config.recentResultsEnabled });
 });
 
 app.put('/api/admin/refresh-interval', requireAdminAuth, (req, res) => {
@@ -159,6 +176,18 @@ app.put('/api/admin/games/:id', requireAdminAuth, (req, res) => {
   }
 
   res.json({ ok: true, game });
+});
+
+app.delete('/api/admin/games/:id', requireAdminAuth, (req, res) => {
+  const game = getGame(req.params.id);
+  if (!game) return res.status(404).json({ error: 'unknown game' });
+
+  config.games = config.games.filter((g) => g.id !== game.id);
+  saveConfig(config);
+  delete cache[game.id];
+  delete pendingRecent[game.id];
+
+  res.json({ ok: true, removed: game.id });
 });
 
 app.post('/api/admin/games', requireAdminAuth, async (req, res) => {
@@ -218,7 +247,11 @@ app.get('/api/matches/:gameId', (req, res) => {
   const game = getEnabledGames().find((g) => g.id === req.params.gameId);
   if (!game) return res.status(404).json({ error: 'unknown game' });
   const data = cache[game.id] || { live: [], upcoming: [], recent: [], updatedAt: null, error: 'not loaded yet' };
-  res.json({ ...data, refreshIntervalSeconds: config.refreshIntervalSeconds });
+  res.json({
+    ...data,
+    refreshIntervalSeconds: config.refreshIntervalSeconds,
+    recentResultsEnabled: config.recentResultsEnabled,
+  });
 });
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));

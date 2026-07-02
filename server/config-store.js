@@ -30,6 +30,11 @@ function loadConfig() {
   }
   return {
     refreshIntervalSeconds: Number(process.env.REFRESH_INTERVAL_SECONDS || 30),
+    // Off by default: PandaScore's free tier doesn't include past-match
+    // results (that's the paid "Historical Data" tier, priced per
+    // videogame). Leaving this on burns a request per game per refresh
+    // for data that mostly comes back empty. See admin panel note.
+    recentResultsEnabled: false,
     games: loadSeedGames(),
   };
 }

@@ -36,6 +36,8 @@ function renderGames(games) {
         '<input type="checkbox" data-id="' + escapeHtml(g.id) + '" ' + (g.enabled !== false ? 'checked' : '') + ' />' +
         'enabled' +
         '</label>' +
+        '<button type="button" class="admin-remove-btn" data-id="' + escapeHtml(g.id) + '" ' +
+        'data-name="' + escapeHtml(g.name) + '" title="Remove this game">Remove</button>' +
         '</div>'
       );
     })
@@ -47,6 +49,34 @@ function renderGames(games) {
       updateGameEnabled(e.target.dataset.id, e.target.checked);
     });
   }
+
+  var removeButtons = wrap.querySelectorAll('.admin-remove-btn');
+  for (var j = 0; j < removeButtons.length; j++) {
+    removeButtons[j].addEventListener('click', function (e) {
+      var id = e.target.dataset.id;
+      var name = e.target.dataset.name;
+      if (!window.confirm('Remove "' + name + '"? This deletes it from the config entirely — you\'ll need to re-add it via the form below to get it back.')) {
+        return;
+      }
+      removeGame(id, name);
+    });
+  }
+}
+
+function removeGame(id, name) {
+  fetch('/api/admin/games/' + encodeURIComponent(id), { method: 'DELETE' })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      if (data.error) {
+        showNote(data.error, true);
+        return;
+      }
+      showNote('Removed ' + name + '.', false);
+      loadConfig();
+    })
+    .catch(function () {
+      showNote('Failed to remove ' + name + '.', true);
+    });
 }
 
 function loadConfig() {
@@ -57,6 +87,7 @@ function loadConfig() {
     })
     .then(function (data) {
       el('refresh-input').value = data.refreshIntervalSeconds;
+      el('recent-results-input').checked = Boolean(data.recentResultsEnabled);
       renderGames(data.games);
     })
     .catch(function (err) {
@@ -100,6 +131,26 @@ el('refresh-save').addEventListener('click', function () {
     })
     .catch(function () {
       showNote('Failed to update refresh interval.', true);
+    });
+});
+
+el('recent-results-input').addEventListener('change', function (e) {
+  var enabled = e.target.checked;
+  fetch('/api/admin/recent-results', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ enabled: enabled }),
+  })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      if (data.error) {
+        showNote(data.error, true);
+        return;
+      }
+      showNote('Recent Results ' + (enabled ? 'enabled' : 'disabled') + '.', false);
+    })
+    .catch(function () {
+      showNote('Failed to update Recent Results setting.', true);
     });
 });
 

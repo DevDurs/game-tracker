@@ -17,7 +17,7 @@
       "slug": "deadlock",
       "icon": "🕸️",
       "color": "#8e44ad",
-      "enabled": true,
+      "enabled": false,
       "note": "No public esports schedule API exists for Deadlock yet. Showing sample placeholder data until one is wired up (see providers/mock.js)."
     },
     {
@@ -27,7 +27,7 @@
       "slug": "csgo",
       "icon": "🔫",
       "color": "#f39c12",
-      "enabled": true,
+      "enabled": false,
       "note": "PandaScore still uses the \"csgo\" endpoint slug for CS2 data (legacy naming from their CS2 migration)."
     }
   ]

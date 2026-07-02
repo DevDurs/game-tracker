@@ -85,3 +85,17 @@
   color: var(--muted);
   cursor: pointer;
 }
+
+.admin-remove-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: #e74c3c;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.admin-remove-btn:hover {
+  background: #3a1f1f;
+  border-color: #e74c3c;
+}

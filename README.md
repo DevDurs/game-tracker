@@ -76,6 +76,15 @@ but it does include match status (`not_started` / `running` / `finished`),
 scheduled start times, teams, and league/tournament names — enough to power
 the live section and countdowns.
 
+**Past-match results are not included in the free tier** — that's
+PandaScore's paid "Historical Data" plan, priced per videogame (roughly
+£400/month per game at time of writing). Because of that, the "Recent
+Results" section is **off by default** and can be turned on from the
+[admin panel](#admin-panel) if you want to try it anyway — high-volume
+titles may show *something* even without the paid plan (the app holds
+onto matches that recently dropped off "Live" for a while), but
+lower-volume titles will mostly stay empty.
+
 ## Deploying to a server without building there
 
 A GitHub Actions workflow (`.github/workflows/docker-publish.yml`) builds
@@ -161,6 +170,12 @@ for these via standard HTTP Basic Auth. From there you can:
 - Add a new game, choosing an existing provider (`pandascore` or `mock`)
   and, for PandaScore, that game's PandaScore slug (e.g. `lol`, `valorant`,
   `overwatch`)
+- Remove a game entirely (a "Remove" button next to each game, with a
+  confirmation prompt) — unlike disabling, this deletes it from the config,
+  so you'd need to re-add it via the form to get it back
+- Turn "Recent Results" on/off (off by default — see the note above about
+  why). Also applies immediately, and when off the app skips the
+  past-matches request entirely rather than fetching data it can't fully use.
 
 **No database is used or needed.** Admin changes are written to a small
 JSON file at `server/data/runtime-config.json`. `server/games.json` stays
