@@ -5,6 +5,7 @@ let countdownTimer = null;
 let refreshIntervalSeconds = 30;
 let lastLive = [];
 let lastUpcoming = [];
+let lastRecent = [];
 
 // --- Favourite teams (persisted locally in the browser) ---
 let favoriteTeams = new Set(JSON.parse(localStorage.getItem('favoriteTeams') || '[]'));
@@ -22,6 +23,25 @@ function toggleFavorite(name) {
   localStorage.setItem('favoriteTeams', JSON.stringify(Array.from(favoriteTeams)));
   renderLive(lastLive);
   renderUpcoming(lastUpcoming);
+  renderRecent(lastRecent);
+}
+
+// --- Favourites-only filter (persisted locally) ---
+let favoritesOnly = localStorage.getItem('favoritesOnly') === 'true';
+
+function applyFavoritesButtonState() {
+  var btn = document.getElementById('favorites-toggle');
+  btn.classList.toggle('active', favoritesOnly);
+  btn.textContent = favoritesOnly ? '★ Favourites only' : '☆ Favourites only';
+}
+
+function toggleFavoritesOnly() {
+  favoritesOnly = !favoritesOnly;
+  localStorage.setItem('favoritesOnly', String(favoritesOnly));
+  applyFavoritesButtonState();
+  renderLive(lastLive);
+  renderUpcoming(lastUpcoming);
+  renderRecent(lastRecent);
 }
 
 // --- Spoiler-free mode (persisted locally) ---
@@ -39,6 +59,7 @@ function toggleSpoilerMode() {
   applySpoilerButtonState();
   renderLive(lastLive);
   renderUpcoming(lastUpcoming);
+  renderRecent(lastRecent);
 }
 
 function el(id) {
@@ -159,14 +180,30 @@ function matchMetaLine(m) {
   return [m.league, m.serie, m.tournament].filter(Boolean).join(' - ') || '-';
 }
 
+function agoString(iso) {
+  if (!iso) return '';
+  var diff = Date.now() - new Date(iso).getTime();
+  if (diff < 0) return 'just now';
+  var mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  var hours = Math.floor(mins / 60);
+  if (hours < 24) return hours + 'h ' + (mins % 60) + 'm ago';
+  var days = Math.floor(hours / 24);
+  return days + 'd ago';
+}
+
 function renderLive(matches) {
   lastLive = matches;
   var wrap = el('live-matches');
-  if (!matches.length) {
-    wrap.innerHTML = '<div class="empty">No live matches right now.</div>';
+  var visible = favoritesOnly ? matches.filter(matchHasFavorite) : matches;
+  if (!visible.length) {
+    wrap.innerHTML = favoritesOnly && matches.length
+      ? '<div class="empty">No live matches involving a favourited team right now.</div>'
+      : '<div class="empty">No live matches right now.</div>';
     return;
   }
-  var sorted = matches.slice().sort(function (a, b) {
+  var sorted = visible.slice().sort(function (a, b) {
     return (matchHasFavorite(b) ? 1 : 0) - (matchHasFavorite(a) ? 1 : 0);
   });
   wrap.innerHTML = sorted
@@ -180,7 +217,7 @@ function renderLive(matches) {
         '<div class="match-right">' +
         watchButtonHtml(m) +
         spoilerWrap(scoreHtml, m.id, 'score') +
-        spoilerWrap('<span class="badge-live">LIVE</span>', m.id, 'live') +
+        '<span class="badge-live">LIVE</span>' +
         '</div>' +
         '</div>'
       );
@@ -191,11 +228,14 @@ function renderLive(matches) {
 function renderUpcoming(matches) {
   lastUpcoming = matches;
   var wrap = el('upcoming-matches');
-  if (!matches.length) {
-    wrap.innerHTML = '<div class="empty">No upcoming matches scheduled.</div>';
+  var visible = favoritesOnly ? matches.filter(matchHasFavorite) : matches;
+  if (!visible.length) {
+    wrap.innerHTML = favoritesOnly && matches.length
+      ? '<div class="empty">No upcoming matches involving a favourited team.</div>'
+      : '<div class="empty">No upcoming matches scheduled.</div>';
     return;
   }
-  var sorted = matches.slice().sort(function (a, b) {
+  var sorted = visible.slice().sort(function (a, b) {
     return (matchHasFavorite(b) ? 1 : 0) - (matchHasFavorite(a) ? 1 : 0);
   });
   wrap.innerHTML = sorted
@@ -209,6 +249,36 @@ function renderUpcoming(matches) {
         '<div class="match-right">' +
         watchButtonHtml(m) +
         '<span class="countdown" data-countdown="' + (m.beginAt || '') + '">' + countdown + '</span>' +
+        '</div>' +
+        '</div>'
+      );
+    })
+    .join('');
+}
+
+function renderRecent(matches) {
+  lastRecent = matches;
+  var wrap = el('recent-matches');
+  var visible = favoritesOnly ? matches.filter(matchHasFavorite) : matches;
+  if (!visible.length) {
+    wrap.innerHTML = favoritesOnly && matches.length
+      ? '<div class="empty">No results in the last 24h involving a favourited team.</div>'
+      : '<div class="empty">No matches finished in the last 24 hours.</div>';
+    return;
+  }
+  var sorted = visible.slice().sort(function (a, b) {
+    return new Date(b.beginAt || 0) - new Date(a.beginAt || 0);
+  });
+  wrap.innerHTML = sorted
+    .map(function (m) {
+      var cardClass = 'match-card' + (matchHasFavorite(m) ? ' favorite-card' : '');
+      var scoreHtml = m.scoreA != null ? '<span class="score">' + m.scoreA + ' - ' + m.scoreB + '</span>' : '';
+      return (
+        '<div class="' + cardClass + '">' +
+        '<div class="match-teams">' + teamHtml(m.teamA) + '<span class="vs">vs</span>' + teamHtml(m.teamB) + '</div>' +
+        '<div class="match-meta">' + matchMetaLine(m) + '<br/>' + agoString(m.beginAt) + '</div>' +
+        '<div class="match-right">' +
+        spoilerWrap(scoreHtml, m.id, 'recent-score') +
         '</div>' +
         '</div>'
       );
@@ -234,6 +304,7 @@ function fetchMatches() {
 
       renderLive(data.live || []);
       renderUpcoming(data.upcoming || []);
+      renderRecent(data.recent || []);
 
       el('last-updated').textContent = data.updatedAt
         ? new Date(data.updatedAt).toLocaleTimeString()
@@ -268,6 +339,9 @@ function startPolling() {
 
 el('spoiler-toggle').addEventListener('click', toggleSpoilerMode);
 applySpoilerButtonState();
+
+el('favorites-toggle').addEventListener('click', toggleFavoritesOnly);
+applyFavoritesButtonState();
 
 loadGames().then(function () {
   countdownTimer = setInterval(tickCountdowns, 1000);

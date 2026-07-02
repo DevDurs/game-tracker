@@ -11,6 +11,7 @@
     <h1><span id="active-icon">🛡️</span> Esports Match Dashboard</h1>
     <div class="header-right">
       <nav id="game-tabs"></nav>
+      <button id="favorites-toggle" class="tab favorites-toggle" title="Show only matches with a favourited team">☆ Favourites only</button>
       <button id="spoiler-toggle" class="tab spoiler-toggle" title="Hide live scores/results until clicked">🙈 Spoiler-free</button>
       <div class="status">
         <span id="status-dot" class="dot"></span>
@@ -30,6 +31,11 @@
     <section>
       <h2>Upcoming</h2>
       <div id="upcoming-matches" class="matches"></div>
+    </section>
+
+    <section>
+      <h2>Recent Results (last 24h)</h2>
+      <div id="recent-matches" class="matches"></div>
     </section>
   </main>
 

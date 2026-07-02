@@ -159,12 +159,21 @@ h2 {
   border: none;
   color: var(--muted);
   cursor: pointer;
-  font-size: 14px;
-  padding: 0 0 0 2px;
+  font-size: 20px;
+  padding: 0 2px;
   line-height: 1;
 }
 .fav-star.active { color: #f1c40f; }
-.fav-star:hover { color: #f1c40f; }
+.fav-star:hover { color: #f1c40f; transform: scale(1.15); }
+
+.favorites-toggle {
+  margin-left: 4px;
+}
+.favorites-toggle.active {
+  background: #4a3a0f;
+  border-color: #f1c40f;
+  color: #f1c40f;
+}
 
 .match-card.favorite-card {
   border-color: #f1c40f;

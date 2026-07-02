@@ -14,6 +14,24 @@ function inMinutes(mins) {
 async function getMatches({ slug }) {
   return {
     live: [],
+    recent: [
+      {
+        id: `${slug}-demo-recent-1`,
+        status: 'finished',
+        beginAt: inMinutes(-300),
+        scheduledAt: inMinutes(-300),
+        league: 'Demo League',
+        serie: 'Season 1',
+        tournament: 'Playoffs',
+        matchType: 'best_of',
+        bestOf: 3,
+        streamUrl: null,
+        teamA: { name: 'Team Epsilon', image: null, id: null },
+        teamB: { name: 'Team Zeta', image: null, id: null },
+        scoreA: 2,
+        scoreB: 1,
+      },
+    ],
     upcoming: [
       {
         id: `${slug}-demo-1`,

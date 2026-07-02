@@ -34,8 +34,8 @@ function normalizeMatch(m) {
   };
 }
 
-async function fetchMatches(status, slug, apiKey) {
-  const url = `${BASE}/${slug}/matches/${status}?per_page=25&sort=begin_at`;
+async function fetchMatches(status, slug, apiKey, sort) {
+  const url = `${BASE}/${slug}/matches/${status}?per_page=25&sort=${sort || 'begin_at'}`;
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${apiKey}` },
   });
@@ -47,6 +47,8 @@ async function fetchMatches(status, slug, apiKey) {
   return data.map(normalizeMatch);
 }
 
+const RECENT_WINDOW_MS = 24 * 60 * 60 * 1000; // last 24 hours
+
 async function getMatches({ slug }) {
   const apiKey = process.env.PANDASCORE_API_KEY;
   if (!apiKey) {
@@ -55,12 +57,18 @@ async function getMatches({ slug }) {
     );
   }
 
-  const [running, upcoming] = await Promise.all([
+  const [running, upcoming, past] = await Promise.all([
     fetchMatches('running', slug, apiKey),
     fetchMatches('upcoming', slug, apiKey),
+    // 'past' would otherwise sort oldest-first by begin_at; flip it so we
+    // get the most recently finished matches, not the oldest ones.
+    fetchMatches('past', slug, apiKey, '-begin_at'),
   ]);
 
-  return { live: running, upcoming };
+  const cutoff = Date.now() - RECENT_WINDOW_MS;
+  const recent = past.filter((m) => m.beginAt && new Date(m.beginAt).getTime() >= cutoff);
+
+  return { live: running, upcoming, recent };
 }
 
 module.exports = { getMatches };

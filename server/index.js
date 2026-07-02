@@ -9,7 +9,7 @@ const games = JSON.parse(
 
 const REFRESH_INTERVAL_SECONDS = Number(process.env.REFRESH_INTERVAL_SECONDS || 30);
 const DEMO_MODE = String(process.env.DEMO_MODE || '').toLowerCase() === 'true';
-const PORT = Number(process.env.PORT || 8080);
+const PORT = Number(process.env.PORT || 9012);
 
 const providers = {};
 function getProvider(name) {
@@ -26,10 +26,11 @@ async function refreshGame(game) {
   const providerName = DEMO_MODE ? 'mock' : game.provider;
   try {
     const provider = getProvider(providerName);
-    const { live, upcoming } = await provider.getMatches({ slug: game.slug });
+    const { live, upcoming, recent } = await provider.getMatches({ slug: game.slug });
     cache[game.id] = {
       live,
       upcoming,
+      recent: recent || [],
       updatedAt: new Date().toISOString(),
       error: null,
       demo: DEMO_MODE || providerName === 'mock',
@@ -40,10 +41,11 @@ async function refreshGame(game) {
     // useful (e.g. missing API key) instead of a blank screen.
     try {
       const mock = getProvider('mock');
-      const { live, upcoming } = await mock.getMatches({ slug: game.slug });
+      const { live, upcoming, recent } = await mock.getMatches({ slug: game.slug });
       cache[game.id] = {
         live,
         upcoming,
+        recent: recent || [],
         updatedAt: new Date().toISOString(),
         error: err.message,
         demo: true,
@@ -52,6 +54,7 @@ async function refreshGame(game) {
       cache[game.id] = {
         live: [],
         upcoming: [],
+        recent: [],
         updatedAt: new Date().toISOString(),
         error: err.message,
         demo: false,
@@ -82,7 +85,7 @@ app.get('/api/games', (req, res) => {
 app.get('/api/matches/:gameId', (req, res) => {
   const game = games.find((g) => g.id === req.params.gameId);
   if (!game) return res.status(404).json({ error: 'unknown game' });
-  const data = cache[game.id] || { live: [], upcoming: [], updatedAt: null, error: 'not loaded yet' };
+  const data = cache[game.id] || { live: [], upcoming: [], recent: [], updatedAt: null, error: 'not loaded yet' };
   res.json({ ...data, refreshIntervalSeconds: REFRESH_INTERVAL_SECONDS });
 });
 
